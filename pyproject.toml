@@ -1,3 +1,4 @@
+
 [project]
 name = "probcast"
 version = "0.1.0"
@@ -10,7 +11,7 @@ requires-python = ">=3.13"
 dependencies = []
 
 [project.scripts]
-probcast = "probcast:main"
+probcast = "probcast:master"
 
 [build-system]
 requires = ["uv_build>=0.12.21,<0.13.0"]
@@ -26,6 +27,32 @@ dev = [
 
 [tool.ruff]
 line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "I",    # Import sorting
+    "B",    # Bugbear
+    "UP",   # Modern Python
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+branch = true
+source = ["probcast"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 40
 
 [tool.mypy]
 strict = true
+python_version = "3.13"
