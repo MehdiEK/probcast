@@ -1,7 +1,7 @@
 [project]
 name = "probcast"
 version = "0.1.0"
-description = "Add your description here"
+description = "Evaluation and monitoring of probabilisitc forecasts"
 readme = "README.md"
 authors = [
     { name = "MehdiEK", email = "elkansoulimehdi@yahoo.fr" }
