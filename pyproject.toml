@@ -56,3 +56,4 @@ fail_under = 40
 [tool.mypy]
 strict = true
 python_version = "3.13"
+files = ["src/"]
