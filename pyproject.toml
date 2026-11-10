@@ -1,7 +1,7 @@
 [project]
 name = "probcast"
 version = "0.1.0"
-description = "Add your description here"
+description = "Evaluation and monitoring of probabilisitc forecasts"
 readme = "README.md"
 authors = [
     { name = "MehdiEK", email = "elkansoulimehdi@yahoo.fr" }
@@ -23,3 +23,9 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.17.4",
 ]
+
+[tool.ruff]
+line-length = 88
+
+[tool.mypy]
+strict = true
