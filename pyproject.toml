@@ -23,3 +23,9 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.17.4",
 ]
+
+[tool.ruff]
+line-length = 88
+
+[tool.mypy]
+strict = true
