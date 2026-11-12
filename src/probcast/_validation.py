@@ -20,6 +20,8 @@ def check_quantile_inputs(y_true, y_pred, quantiles):
 
     if y.ndim != 1:
         raise ValueError("y_true must be 1-D")
+    if taus.ndim != 1:
+        raise ValueError("quantiles must be 1-D")
     if q_pred.shape != (y.shape[0], taus.shape[0]):
         raise ValueError(f"y_pred must have shape (n, k); got {q_pred.shape}")
     if not (np.all(taus > 0) and np.all(taus < 1) and np.all(np.diff(taus) > 0)):
