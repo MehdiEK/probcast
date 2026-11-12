@@ -10,8 +10,8 @@ def check_quantile_inputs(y_true, y_pred, quantiles):
     :param y_pred: ArrayLike
         1D or 2D-Array of forecasted quantiles (n, k)
     :param quantiles: ArrayLike
-        1D-array of targets quantiles between 0 and 1   
-    
+        1D-array of targets quantiles between 0 and 1
+
     :return: Tuple of (y, q_pred, taus) as np.ndarray
     """
     y = np.asarray(y_true, dtype=float)
