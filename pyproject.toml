@@ -10,6 +10,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.5.4",
+    "scipy>=1.18.1",
 ]
 
 [project.scripts]
@@ -59,3 +60,7 @@ fail_under = 40
 strict = true
 python_version = "3.13"
 files = ["src/"]
+
+[[tool.mypy.overrides]]
+module = ["scipy.stats"]
+ignore_missing_imports = true
