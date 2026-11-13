@@ -1,7 +1,13 @@
 import numpy as np
 
+from numpy.typing import ArrayLike, NDArray
 
-def check_quantile_inputs(y_true, y_pred, quantiles):
+
+def check_quantile_inputs(
+    y_true: ArrayLike,
+    y_pred: ArrayLike,
+    quantiles: ArrayLike
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """
     Check the inputs for quantile loss functions.
 
