@@ -17,7 +17,7 @@ def _winkler_scores(
 
 
 def mean_winkler_score(
-	y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike, alpha: float
+    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike, alpha: float
 ) -> float:
     """Compute the mean Winkler score for prediction intervals.
 
