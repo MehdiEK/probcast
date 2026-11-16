@@ -34,32 +34,32 @@ def check_quantile_inputs(
     return y, q_pred, taus
 
 
-def check_interval_inputs_without_alpha(
-    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike
-) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
-    """Validate observations and interval bounds."""
-    arrays = []
-    for name, values in (("y_true", y_true), ("lower", lower), ("upper", upper)):
-        try:
-            array = np.asarray(values, dtype=float)
-        except (TypeError, ValueError, OverflowError):
-            raise TypeError(
-                f"{name} must be convertible to a float array; got {values!r}"
-            ) from None
-        arrays.append(array)
+def _as_float_array(name: str, values: ArrayLike) -> NDArray[np.float64]:
+    try:
+        return np.asarray(values, dtype=float)
+    except (TypeError, ValueError, OverflowError):
+        raise TypeError(
+            f"{name} must be convertible to a float array; got {values!r}"
+        ) from None
 
-    y, lo, hi = arrays
-    if not (y.shape == lo.shape == hi.shape):
+
+def check_interval_bounds(
+    lower: ArrayLike, upper: ArrayLike
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Validate and convert matching interval bounds."""
+    lo = _as_float_array("lower", lower)
+    hi = _as_float_array("upper", upper)
+
+    if lo.shape != hi.shape:
         raise ValueError(
-            "y_true, lower, and upper must have identical shapes; "
-            f"got {y.shape}, {lo.shape}, and {hi.shape}"
+            f"lower and upper must have identical shapes; got {lo.shape} and {hi.shape}"
         )
-    if y.ndim == 0:
-        raise ValueError("y_true, lower, and upper must have at least 1 dimension")
-    if y.size == 0:
-        raise ValueError("y_true, lower, and upper must not be empty")
+    if lo.ndim == 0:
+        raise ValueError("lower and upper must have at least 1 dimension")
+    if lo.size == 0:
+        raise ValueError("lower and upper must not be empty")
 
-    for name, array in (("y_true", y), ("lower", lo), ("upper", hi)):
+    for name, array in (("lower", lo), ("upper", hi)):
         non_finite = array[~np.isfinite(array)]
         if non_finite.size:
             raise ValueError(
@@ -75,14 +75,34 @@ def check_interval_inputs_without_alpha(
             f"at index {first_index}"
         )
 
-    return y, lo, hi
+    return lo, hi
 
 
 def check_interval_inputs(
+    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Validate observations and their matching interval bounds."""
+    y = _as_float_array("y_true", y_true)
+    lo, hi = check_interval_bounds(lower, upper)
+
+    if not (y.shape == lo.shape == hi.shape):
+        raise ValueError(
+            "y_true, lower, and upper must have identical shapes; "
+            f"got {y.shape}, {lo.shape}, and {hi.shape}"
+        )
+
+    non_finite = y[~np.isfinite(y)]
+    if non_finite.size:
+        raise ValueError(f"y_true must contain only finite values; found {non_finite}")
+
+    return y, lo, hi
+
+
+def check_interval_inputs_with_alpha(
     y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike, alpha: float
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], float]:
     """Validate observations, interval bounds, and nominal miscoverage."""
-    y, lo, hi = check_interval_inputs_without_alpha(y_true, lower, upper)
+    y, lo, hi = check_interval_inputs(y_true, lower, upper)
 
     if isinstance(alpha, bool) or not isinstance(alpha, Real):
         raise TypeError(f"alpha must be a real scalar; got {alpha!r}")
