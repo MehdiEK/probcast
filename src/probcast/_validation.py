@@ -34,10 +34,10 @@ def check_quantile_inputs(
     return y, q_pred, taus
 
 
-def check_interval_inputs(
-    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike, alpha: float
-) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], float]:
-    """Validate observations, interval bounds, and nominal miscoverage."""
+def check_interval_inputs_without_alpha(
+    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Validate observations and interval bounds."""
     arrays = []
     for name, values in (("y_true", y_true), ("lower", lower), ("upper", upper)):
         try:
@@ -74,6 +74,15 @@ def check_interval_inputs(
             f"got lower={lo[first_index]} and upper={hi[first_index]} "
             f"at index {first_index}"
         )
+
+    return y, lo, hi
+
+
+def check_interval_inputs(
+    y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike, alpha: float
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], float]:
+    """Validate observations, interval bounds, and nominal miscoverage."""
+    y, lo, hi = check_interval_inputs_without_alpha(y_true, lower, upper)
 
     if isinstance(alpha, bool) or not isinstance(alpha, Real):
         raise TypeError(f"alpha must be a real scalar; got {alpha!r}")

@@ -1,7 +1,10 @@
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from probcast._validation import check_interval_inputs
+from probcast._validation import (
+    check_interval_inputs,
+    check_interval_inputs_without_alpha,
+)
 
 
 def _winkler_scores(
@@ -52,3 +55,81 @@ def mean_winkler_score(
     """
     y, lo, hi, alpha_value = check_interval_inputs(y_true, lower, upper, alpha)
     return float(_winkler_scores(y, lo, hi, alpha_value).mean())
+
+
+def interval_coverage(y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike) -> float:
+    """Compute the empirical coverage of prediction intervals.
+
+    For each observation ``y`` and interval ``[l, u]``, coverage is
+
+    ``1`` when ``l <= y <= u`` and ``0`` otherwise.
+
+    Coverage is averaged over all elements. Inputs may have any matching
+    shape with at least one dimension; N-dimensional arrays are supported.
+    Array-like inputs are converted to float arrays, and non-finite values are
+    rejected.
+
+    :param y_true: ArrayLike
+        Observed values.
+    :param lower: ArrayLike
+        Lower bounds of the prediction intervals.
+    :param upper: ArrayLike
+        Upper bounds of the prediction intervals.
+
+    :return: Empirical interval coverage as a float in [0, 1].
+
+    :raises TypeError: If an input cannot be converted to a float array.
+    :raises ValueError: If the arrays have different shapes, are empty or
+        non-finite, or contain invalid bounds.
+
+    Examples
+    --------
+    >>> interval_coverage([0, 2], [-1, 1], [1, 3])
+    1.0
+    """
+    y, lo, hi = check_interval_inputs_without_alpha(y_true, lower, upper)
+    return float(np.mean((lo <= y) & (y <= hi)))
+
+
+def average_width(y_true: ArrayLike, lower: ArrayLike, upper: ArrayLike) -> float:
+    """Compute the mean width of prediction intervals.
+
+    For each interval ``[l, u]``, its width is
+
+    ``u - l``.
+
+    Width is averaged over all elements. Inputs may have any matching shape
+    with at least one dimension; N-dimensional arrays are supported.
+    Array-like inputs are converted to float arrays, and non-finite values are
+    rejected. ``y_true`` is used only for validation.
+
+    :param y_true: ArrayLike
+        Observed values, used only to validate the input shapes and values.
+    :param lower: ArrayLike
+        Lower bounds of the prediction intervals.
+    :param upper: ArrayLike
+        Upper bounds of the prediction intervals.
+
+    :return: Mean interval width as a non-negative float.
+
+    :raises TypeError: If an input cannot be converted to a float array.
+    :raises ValueError: If the arrays have different shapes, are empty or
+        non-finite, or contain invalid bounds.
+    :raises OverflowError: If an interval width cannot be represented as a
+        finite float.
+
+    Examples
+    --------
+    >>> average_width([0, 2], [-1, 1], [1, 3])
+    2.0
+    """
+    _, lo, hi = check_interval_inputs_without_alpha(y_true, lower, upper)
+    with np.errstate(over="ignore"):
+        widths = hi - lo
+    if not np.all(np.isfinite(widths)):
+        raise OverflowError("interval width is not representable as a finite float")
+
+    max_width = float(np.max(widths))
+    if max_width == 0.0:
+        return 0.0
+    return float(max_width * np.mean(widths / max_width))
