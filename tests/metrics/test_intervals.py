@@ -286,46 +286,38 @@ class TestIntervalCoverage:
 
 class TestAverageWidth:
     @pytest.mark.parametrize(
-        ("y_true", "lower", "upper", "expected"),
+        ("lower", "upper", "expected"),
         [
-            ([0, 1, 2], [0, 0, 0], [2, 2, 2], 2.0),  # (2 + 2 + 2) / 3 = 2
-            ([0, 1], [0, 1], [0, 1], 0.0),  # (0 + 0) / 2 = 0
-            ([1, 2, 3, 4, 5], [0, 3, 2, 4, 6], [2, 4, 4, 4, 8], 1.4),  # 7 / 5
+            ([0, 0, 0], [2, 2, 2], 2.0),  # (2 + 2 + 2) / 3 = 2
+            ([0, 1], [0, 1], 0.0),  # (0 + 0) / 2 = 0
+            ([0, 3, 2, 4, 6], [2, 4, 4, 4, 8], 1.4),  # 7 / 5
         ],
     )
-    def test_known_values(self, y_true, lower, upper, expected):
+    def test_known_values(self, lower, upper, expected):
         """Compute the mean distance between interval bounds."""
-        assert average_width(y_true, lower, upper) == pytest.approx(expected)
+        assert average_width(lower, upper) == pytest.approx(expected)
 
     def test_mixed_example_arithmetic(self):
         """Average widths 2, 1, 2, 0, and 2 to get 7/5 = 1.4."""
-        assert average_width(
-            [1, 2, 3, 4, 5], [0, 3, 2, 4, 6], [2, 4, 4, 4, 8]
-        ) == pytest.approx(1.4)
-
-    def test_result_does_not_depend_on_observation_values(self):
-        """Keep width unchanged when only y_true changes."""
-        assert average_width([0, 1], [0, 1], [2, 3]) == average_width(
-            [100, -100], [0, 1], [2, 3]
-        )
+        assert average_width([0, 3, 2, 4, 6], [2, 4, 4, 4, 8]) == pytest.approx(1.4)
 
     def test_width_is_non_negative(self):
         """Return a non-negative width for valid interval bounds."""
-        assert average_width([0, 1], [0, 1], [2, 1]) >= 0.0
+        assert average_width([0, 1], [2, 1]) >= 0.0
 
     def test_common_shift_and_positive_scaling(self):
         """Preserve widths under shifts and scale them by positive constants."""
-        original = average_width([0, 3], [1, 1], [2, 4])
-        shifted = average_width([10, 13], [11, 11], [12, 14])
-        scaled = average_width([0, 15], [5, 5], [10, 20])
+        original = average_width([1, 1], [2, 4])
+        shifted = average_width([11, 11], [12, 14])
+        scaled = average_width([5, 5], [10, 20])
 
         assert shifted == pytest.approx(original)
         assert scaled == pytest.approx(5.0 * original)
 
     def test_widening_intervals_never_decreases_width(self):
         """Increase or preserve mean width after widening intervals."""
-        original = average_width([0, 1], [0, 1], [1, 2])
-        widened = average_width([0, 1], [-1, 0], [2, 3])
+        original = average_width([0, 1], [1, 2])
+        widened = average_width([-1, 0], [2, 3])
 
         assert widened >= original
 
@@ -335,19 +327,19 @@ class TestAverageWidth:
         with_miss = ([-1, 2], [0, 1], [3, 4])
 
         score = mean_winkler_score(*all_covered, alpha=0.1)
-        assert score == pytest.approx(average_width(*all_covered))
+        assert score == pytest.approx(average_width(all_covered[1], all_covered[2]))
         assert interval_coverage(*all_covered) == 1.0
 
         score = mean_winkler_score(*with_miss, alpha=0.1)
-        assert score >= average_width(*with_miss)
+        assert score >= average_width(with_miss[1], with_miss[2])
         assert interval_coverage(*with_miss) < 1.0
 
     @pytest.mark.parametrize(
         "inputs",
         [
-            ([0, 2], [-1, 1], [1, 3]),
-            ((0, 2), (-1, 1), (1, 3)),
-            (np.array([0, 2]), np.array([-1, 1]), np.array([1, 3])),
+            ([-1, 1], [1, 3]),
+            ((-1, 1), (1, 3)),
+            (np.array([-1, 1]), np.array([1, 3])),
         ],
     )
     def test_common_array_likes(self, inputs):
@@ -358,44 +350,36 @@ class TestAverageWidth:
         """Accept pandas Series when installed in the test environment."""
         pandas = pytest.importorskip("pandas")
 
-        assert (
-            average_width(
-                pandas.Series([0, 2]), pandas.Series([-1, 1]), pandas.Series([1, 3])
-            )
-            == 2.0
-        )
+        assert average_width(pandas.Series([-1, 1]), pandas.Series([1, 3])) == 2.0
 
     def test_integer_and_float_inputs_match(self):
         """Convert integer inputs consistently with equivalent floats."""
-        assert average_width([0, 3], [1, 1], [2, 4]) == average_width(
-            [0.0, 3.0], [1.0, 1.0], [2.0, 4.0]
-        )
+        assert average_width([1, 1], [2, 4]) == average_width([1.0, 1.0], [2.0, 4.0])
 
     def test_supports_nd_arrays(self):
         """Average widths across all elements in N-dimensional inputs."""
-        assert average_width([[0, 2]], [[-1, 1]], [[1, 3]]) == 2.0
+        assert average_width([[-1, 1]], [[1, 3]]) == 2.0
 
     def test_handles_large_values_without_overflow(self):
         """Compute finite widths at large but representable magnitudes."""
-        assert average_width([0.0, 0.0], [0.0, 0.0], [1e300, 1e300]) == 1e300
+        assert average_width([0.0, 0.0], [1e300, 1e300]) == 1e300
 
     def test_unrepresentable_width_raises_overflow_error(self):
         """Report when subtracting finite bounds would overflow float64."""
         with pytest.raises(OverflowError, match="not representable as a finite float"):
-            average_width([0.0], [-1.7e308], [1.7e308])
+            average_width([-1.7e308], [1.7e308])
 
     @pytest.mark.parametrize(
-        ("y_true", "lower", "upper", "error", "message"),
+        ("lower", "upper", "error", "message"),
         [
-            ([0, 1], [0, 2], [1, 1], ValueError, "lower must be less than or equal"),
-            ([0, 1], [0], [1, 2], ValueError, "identical shapes"),
-            ([], [], [], ValueError, "must not be empty"),
-            ([np.nan], [0], [1], ValueError, "y_true must contain only finite"),
-            ([0], [np.inf], [1], ValueError, "lower must contain only finite"),
-            ([0], [0], [-np.inf], ValueError, "upper must contain only finite"),
+            ([0, 2], [1, 1], ValueError, "lower must be less than or equal"),
+            ([0], [1, 2], ValueError, "identical shapes"),
+            ([], [], ValueError, "must not be empty"),
+            ([np.inf], [1], ValueError, "lower must contain only finite"),
+            ([0], [-np.inf], ValueError, "upper must contain only finite"),
         ],
     )
-    def test_validation_errors_propagate(self, y_true, lower, upper, error, message):
+    def test_validation_errors_propagate(self, lower, upper, error, message):
         """Propagate array validation errors with their original messages."""
         with pytest.raises(error, match=message):
-            average_width(y_true, lower, upper)
+            average_width(lower, upper)
